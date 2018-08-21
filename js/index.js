@@ -14,7 +14,7 @@ $('document').ready(() => {
                     columns.push($(element).val());
                 } else {
                     error = "Error al seleccionar las columnas";
-                }
+                } 
             }
         }
         if (error == "") {
@@ -26,9 +26,12 @@ $('document').ready(() => {
                 dataType: "json",
                 url: ruta,
                 success: function (response) {
-                    $('#validaciones').html("");
+                    $('#validaciones').html(response["resultInsert"]+"<br>"+response["resultUpdate"]);
                     console.log(response);
-                }
+                },
+                error: function (param) { 
+                    console.log(param);
+                 }
             });
         } else {
             $('#validaciones').html(error);

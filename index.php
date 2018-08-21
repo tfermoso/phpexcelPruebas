@@ -1,4 +1,5 @@
 <?php
+session_start();
 require 'functions.php';
 ?>
 
@@ -6,7 +7,7 @@ require 'functions.php';
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=, initial-scale=1.0">
+    <meta name="viewport" content="width=initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
@@ -39,6 +40,8 @@ if (isset($_POST['submit'])) {
                 $file = "uploads/" . $_FILES['uploadFile']['name'];
                 $isUploaded = copy($_FILES['uploadFile']['tmp_name'], $file);
                 if ($isUploaded) {
+                    //Guardamos ruta fichero en sesión.
+                    $_SESSION['file'] = $file;
                     include "db.php";
                     include "vendor/phpoffice/phpexcel/Classes/PHPExcel/IOFactory.php";
                     try {
@@ -58,13 +61,22 @@ if (isset($_POST['submit'])) {
                     echo '<h4>Data from excel file</h4>';
                     echo '<table id="excel" cellpadding="5" cellspacing="1" border="1" class="responsive">';
                     echo '<thead>';
+
+                    $consulta_columnas="SELECT `COLUMN_NAME` FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA`='usuariosexcel' AND `TABLE_NAME`='usuarios'";             
+                    $result=mysqli_query($con, $consulta_columnas);
+                    if(!$result) {
+                        die("Database query failed: ".$con->error );
+                    } 
+                    $options="";               
+                    while ($row = mysqli_fetch_array($result)) {
+                        $options .='<option value="'.$row["COLUMN_NAME"].'">'.$row["COLUMN_NAME"].'</option> ' ;
+                    }
+                    
                     $select = '<select id="column" name="column">
                     <option value="" selected>Seleccionar uno...</option>
-                    <option value="id">ID</option>
-                    <option value="usuario">Usuario</option>
-                    <option value="nombre">Nombre</option>
-                    <option value="apellido1">Primer apellido</option>
+                    #_options
                     </select>';
+                    $select=str_replace("#_options",$options,$select);
                     $columns = num_columns($total_columns);
                     for ($i = 0; $i < $columns; $i++) {                        
                         $select1 = str_replace("column", "column".$i, $select);
@@ -80,9 +92,9 @@ if (isset($_POST['submit'])) {
                         echo "<tr>";
                         //Creating a dynamic query based on the rows from the excel file
                         $query .= "(";
-                        //Print each cell of the current row
+                        //Print each cell of the current row                    
                         foreach ($single_row[0] as $key => $value) {
-                            echo "<td>" . $value . "</td>";
+                            echo "<td>" . $value ." -".$key. "</td>";
                             $query .= "'" . mysqli_real_escape_string($con, $value) . "',";
                         }
                         $query = substr($query, 0, -1);
@@ -96,13 +108,13 @@ if (isset($_POST['submit'])) {
                     echo '<div id="validaciones"></div>';
                     // At last we will execute the dynamically created query an save it into the database
                     //mysqli_query($con, $query);
-                    if (mysqli_affected_rows($con) > 0) {
-                        echo '<span class="msg">Database table updated!</span>';
-                    } else {
-                        echo '<span class="msg">Can\'t update database table! try again.</span>';
-                    }
+                    // if (mysqli_affected_rows($con) > 0) {
+                    //     echo '<span class="msg">Database table updated!</span>';
+                    // } else {
+                    //     echo '<span class="msg">Can\'t update database table! try again.</span>';
+                    // }
                     // Finally we will remove the file from the uploads folder (optional)
-                    unlink($file);
+                    // unlink($file);
                 } else {
                     echo '<span class="msg">File not uploaded!</span>';
                 }
